@@ -82,6 +82,10 @@ class TxProof(proofmarshal.proof.Proof):
         """
         return bytes([b^p for b,p in zip(self.hash, self.TX_HASH_XOR_PAD)])
 
+    def verify(self, ctx):
+        # FIXME
+        pass
+
 class OutPointProof(proofmarshal.proof.Proof):
     """Proof that a particular outpoint exists in the Bitcoin blockchain"""
     HASH_HMAC_KEY = b'\xf1@\xe3\x07\xa7\xc2\xc9!%u\xfb\x1a\x8d\x8b\xb9\xe1'
@@ -95,7 +99,23 @@ class TxInProof:
     SERIALIZED_ATTRS = [('i', proofmarshal.serialize.UInt32),
                         ('txproof', TxProof)]
 
+    def verify(self):
+        assert 0 <= self.i < len(self.txproof.tx.vin)
+
+    @property
+    def txin(self):
+        """The CTxIn structure itself"""
+        return self.txproof.tx.vin[self.i]
+
 class TxOutProof:
     """Proof that a CTxOut exists in the blockchain"""
     SERIALIZED_ATTRS = [('i', proofmarshal.serialize.UInt32),
                         ('txproof', TxProof)]
+
+    def verify(self):
+        assert 0 <= self.i < len(self.txproof.tx.vout)
+
+    @property
+    def txout(self):
+        """The CTxOut structure itself"""
+        return self.txproof.tx.vout[self.i]
