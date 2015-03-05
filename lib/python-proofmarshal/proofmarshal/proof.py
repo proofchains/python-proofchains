@@ -23,6 +23,12 @@ cryptographic proofs that may have dependent proofs pruned away.
 
 """
 
+class PrunedError(Exception):
+    def __init__(self, attr_name, instance):
+        self.attr_name = attr_name
+        self.instance = instance
+        super().__init__('Attribute %r not available, pruned away.' % attr_name)
+
 class Proof(HashingSerializer):
     """Base class for all proof objects
 
@@ -34,14 +40,16 @@ class Proof(HashingSerializer):
 
     __slots__ = ['is_pruned', 'is_fully_pruned','__orig_instance','hash']
     SERIALIZED_ATTRS = ()
+    SERIALIZED_ATTRS_BY_NAME = None
 
     def __new__(cls, **kwargs):
         """Basic creation/initialization"""
-        serialized_attrs = {name:ser_cls for (name, ser_cls) in cls.SERIALIZED_ATTRS}
+        if cls.SERIALIZED_ATTRS_BY_NAME is None:
+            cls.SERIALIZED_ATTRS_BY_NAME = {name:ser_cls for name, ser_cls in cls.SERIALIZED_ATTRS}
 
         is_pruned = False
         self = object.__new__(cls)
-        for name, ser_cls in serialized_attrs.items():
+        for name, ser_cls in cls.SERIALIZED_ATTRS_BY_NAME.items():
             value = kwargs[name]
             ser_cls.check_instance(value)
             object.__setattr__(self, name, value)
@@ -102,9 +110,9 @@ class Proof(HashingSerializer):
         if self.__orig_instance is None:
             # Don't have the original instance. Is this an attribute we should
             # have?
-            if name in ():
+            if name in self.SERIALIZED_ATTRS_BY_NAME:
                 # FIXME: raise pruning error
-                raise NotImplementedError
+                raise PrunedError(name, self)
             else:
                 raise AttributeError("%r object has no attribute %r" % (self.__class__, name))
 
@@ -188,7 +196,6 @@ class Proof(HashingSerializer):
     def ctx_deserialize(cls, ctx):
         fully_pruned = ctx.read_bool()
 
-
         if fully_pruned:
             self = object.__new__(cls)
 
@@ -228,12 +235,19 @@ class ProofUnion(Proof):
         """Class decorator to make a subclass part of a ProofUnion
 
         Warning! Declaration order is consensus-critical.
+
+        The HASH_HMAC_KEY for the subclass will be derived from for you if not
+        set manually.
         """
         if not issubclass(subclass, ProofUnion):
             raise TypeError('Only ProofUnion subclasses can be part of a ProofUnion')
 
         if cls.UNION_CLASSES is None:
             cls.UNION_CLASSES = []
+
+        if cls.HASH_HMAC_KEY == subclass.HASH_HMAC_KEY:
+            k = bytes([len(cls.UNION_CLASSES)])
+            subclass.HASH_HMAC_KEY = hmac.HMAC(cls.HASH_HMAC_KEY, k, hashlib.sha256).digest()[0:16]
 
         cls.UNION_CLASSES.append(subclass)
 
@@ -251,6 +265,13 @@ class ProofUnion(Proof):
         super()._ctx_serialize(ctx)
 
     @classmethod
-    def ctx_deserialize(cls, ctx):
-        raise NotImplementedError
+    def _ctx_deserialize(cls, ctx):
+        i = ctx.read_varuint()
 
+        try:
+            union_cls = cls.UNION_CLASSES[i]
+        except IndexError:
+            # FIXME: nicer error message
+            raise DeserializationError('bad union class number %d' % i)
+
+        return super(ProofUnion, union_cls)._ctx_deserialize(ctx)

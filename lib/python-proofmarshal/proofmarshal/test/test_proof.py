@@ -161,9 +161,21 @@ class Test_Proof(unittest.TestCase):
 
         self.assertEqual(b.nonproof_attr, 3)
 
+    def test_PrunedError(self):
+        """PrunedError raised when pruned attribute is not available"""
+
+        orig = BarProof(left=FooProof(n=1), right=FooProof(n=2), nonproof_attr=3)
+        pruned = BarProof.deserialize(orig.prune().serialize())
+
+        try:
+            pruned.left.n
+        except PrunedError as exp:
+            self.assertEqual(exp.attr_name, 'left')
+            self.assertIs(exp.instance, pruned)
+
 
 class FooUnion(ProofUnion):
-    HASH_HMAC_KEY = None
+    HASH_HMAC_KEY = b'\xff'*32
 
 @FooUnion.declare_union_subclass
 class EmptyFooUnion(FooUnion):
@@ -181,7 +193,11 @@ class InnerFooUnion(FooUnion):
     SERIALIZED_ATTRS = [('left', FooUnion),
                         ('right', FooUnion)]
 
-class Test_StructUnion(unittest.TestCase):
+@FooUnion.declare_union_subclass
+class DerivedHmacFooUnion(FooUnion):
+    SERIALIZED_ATTRS = []
+
+class Test_ProofUnion(unittest.TestCase):
     def test_checkinstance(self):
         FooUnion.check_instance(EmptyFooUnion())
         FooUnion.check_instance(LeafFooUnion(value=0))
@@ -202,6 +218,16 @@ class Test_StructUnion(unittest.TestCase):
                                        right=LeafFooUnion(value=0xf)).serialize(),
                          b'\x00\x02\x00\x00\x00\x01\x0f')
 
+    def test_deserialization(self):
+        x = EmptyFooUnion()
+        self.assertEqual(EmptyFooUnion.deserialize(x.serialize()), x)
+
+        x = LeafFooUnion(value=0xf)
+        self.assertEqual(LeafFooUnion.deserialize(x.serialize()), x)
+
+        x = InnerFooUnion(left=EmptyFooUnion(), right=LeafFooUnion(value=0xf))
+        self.assertEqual(InnerFooUnion.deserialize(x.serialize()), x)
+
     def test_hashing(self):
         def H(cls, hmac_msg):
             return hmac.HMAC(cls.HASH_HMAC_KEY, hmac_msg, hashlib.sha256).digest()
@@ -218,3 +244,7 @@ class Test_StructUnion(unittest.TestCase):
         expected_inner_hash = H(InnerFooUnion, expected_empty_hash + expected_leaf_hash)
         self.assertEqual(inner.hash, expected_inner_hash)
 
+    def test_hmac_derivation(self):
+        self.assertNotEqual(FooUnion.HASH_HMAC_KEY, DerivedHmacFooUnion.HASH_HMAC_KEY)
+        self.assertEqual(DerivedHmacFooUnion.HASH_HMAC_KEY,
+                         b'\xbbq\xe7\xee\x04\xbb\xbfH\xb3\x00&\x9a\x8b\xbd\x8a\xc0')
