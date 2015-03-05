@@ -57,7 +57,6 @@ class BitcoinSealWitness(SingleUseSeal):
 
     SERIALIZED_ATTRS = [('seal',      BitcoinSingleUseSeal),
                         ('txin_idx',  proofmarshal.serialize.UInt32),
-                        ('txout_idx', proofmarshal.serialize.UInt32),
                         ('txproof',   proofchains.core.bitcoin.TxProof)]
 
     HASH_HMAC_KEY = bytes.fromhex('4c542f6a89da6520534e4a2095fa24fd')
@@ -72,7 +71,7 @@ class BitcoinSealWitness(SingleUseSeal):
         # Avoid the consensus issues of parsing the scriptPubKey by generating
         # one ourselves, and then doing a byte-for-byte comparison.
         # Additionally we support P2SH and P2PKH for censorship resistance.
-        actual_scriptPubKey = self.txproof.tx.vout[self.txout_idx].scriptPubKey
+        actual_scriptPubKey = self.txproof.tx.vout[0].scriptPubKey
         assert (actual_scriptPubKey == CScript([OP_RETURN, hash]) or
                 actual_scriptPubKey == CScript([OP_HASH160, Hash160(hash), OP_EQUAL]) or
                 actual_scriptPubKey == CScript([OP_DUP, OP_HASH160, Hash160(hash), OP_EQUALVERIFY, OP_CHECKSIG]))
