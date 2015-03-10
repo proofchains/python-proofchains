@@ -25,6 +25,18 @@ from proofchains.core.bitcoin import *
 
 # 01000000019c2c59a5a7484958ce343924d489b3cb77b7229d461fe5bff55716a1bd6062c9000000006a473044022077512714e09d825d46bd3fb4c6fbd17d040d8068549fdc0320ac6cb08b9e047d02203d36a506f5c39fa98c9efa7c3fde253adeb742e221cf01b3caba1320cf591fdb012102bd46cb2abe37a67200c70452ffe5752f20367705283e091e8e9d14c0207c2605ffffffff0158020000000000001976a914b8bcb07f6344b42ab04250c86a6e8b75d3fdbbc688ac00000000 p2pkh
 
+class Test_FakeSingleUseSeal(unittest.TestCase):
+    """Fake seals"""
+    def test_verify_hash(self):
+        fake_seal = FakeSingleUseSeal(committed_hash=b'\x00'*32)
+        fake_witness = FakeSealWitness(seal=fake_seal)
+
+        self.assertIs(fake_witness.seal, fake_seal)
+
+        fake_witness.verify_hash(b'\x00'*32)
+
+        # FIXME: invalid witness test
+
 class Test_SingleUseSeal(unittest.TestCase):
     def test_valid_witness(self):
         seal_outpoint = COutPoint(lx('14180092832c9e49f36e37c2cfa6695a6670cc66dcba42266245e11c8f9de4cf'), 0)

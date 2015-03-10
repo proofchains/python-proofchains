@@ -37,6 +37,25 @@ class SealWitness(proofmarshal.proof.Proof):
     __slots__ = []
 
 
+### Fake seals!
+
+class FakeSingleUseSeal(SingleUseSeal):
+    """Fake SUS that simply hashes the data to be witnessed in advance"""
+    __slots__ = []
+    SERIALIZED_ATTRS = [('committed_hash', proofmarshal.serialize.Digest)]
+
+    HASH_HMAC_KEY = bytes.fromhex('dcd8bf2ec0640b9290e5c0874df3ce14')
+
+class FakeSealWitness(SealWitness):
+    """Witness to a FakeSingleUseSeal"""
+    __slots__ = ['seal']
+    SERIALIZED_ATTRS = [('seal', FakeSingleUseSeal)]
+
+    HASH_HMAC_KEY = bytes.fromhex('77581acb3212ad66fafc597e6154ec92')
+
+    def verify_hash(self, hash):
+        assert self.seal.committed_hash == hash
+
 ### Bitcoin implementation
 
 class BitcoinSingleUseSeal(SingleUseSeal):
