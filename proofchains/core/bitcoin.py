@@ -53,8 +53,8 @@ class COutPointSerializer(proofmarshal.serialize.Serializer):
     @classmethod
     def ctx_deserialize(cls, ctx):
         l = ctx.read_varuint()
-        serialized_tx = ctx.read_bytes(l)
-        outpoint = bitcoin.core.COutPoint.deserialize(tx)
+        serialized_outpoint = ctx.read_bytes(l)
+        outpoint = bitcoin.core.COutPoint.deserialize(serialized_outpoint)
         return outpoint
 
 class TxProof(proofmarshal.proof.Proof):
