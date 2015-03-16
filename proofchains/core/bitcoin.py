@@ -33,7 +33,7 @@ class CTransactionSerializer(proofmarshal.serialize.Serializer):
     def ctx_deserialize(cls, ctx):
         l = ctx.read_varuint()
         serialized_tx = ctx.read_bytes(l)
-        tx = bitcoin.core.CTransaction.deserialize(tx)
+        tx = bitcoin.core.CTransaction.deserialize(serialized_tx)
         return tx
 
 class COutPointSerializer(proofmarshal.serialize.Serializer):
