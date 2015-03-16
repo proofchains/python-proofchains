@@ -44,10 +44,12 @@ class Test_SingleUseSeal(unittest.TestCase):
 
         witness_tx = CTransaction([CTxIn(seal_outpoint)], [CTxOut(0, CScript([OP_RETURN, b'\x00'*32]))])
 
-        btc_sus_witness = BitcoinSealWitness(seal=btc_sus,
-                                             txin_idx=0, txout_idx=0,
-                                             txproof=TxProof(tx=witness_tx))
+        txproof = TxProof(tx=witness_tx)
+        txinproof = TxInProof(txproof=txproof, i=0)
+        txoutproof = TxOutProof(txproof=txproof, i=0)
 
-        btc_sus_witness.verify_hash(b'\x00'*32)
+        btc_sus_witness = BitcoinSealWitness(seal=btc_sus, txinproof=txinproof, txoutproof=txoutproof)
+
+        btc_sus_witness.verify_digest(b'\x00'*32)
 
     # FIXME: need tests for invalid witnesses

@@ -94,10 +94,11 @@ class OutPointProof(proofmarshal.proof.Proof):
     SERIALIZED_ATTRS = [('txproof', TxProof),
                         ('n', proofmarshal.serialize.UInt32)]
 
-class TxInProof:
+class TxInProof(proofmarshal.proof.Proof):
     """Proof that a CTxIn exists in the blockchain"""
     SERIALIZED_ATTRS = [('i', proofmarshal.serialize.UInt32),
                         ('txproof', TxProof)]
+    HASH_HMAC_KEY = bytes.fromhex('3fb898ec2c452d2c1e13654e43f624e3')
 
     def verify(self):
         assert 0 <= self.i < len(self.txproof.tx.vin)
@@ -107,10 +108,11 @@ class TxInProof:
         """The CTxIn structure itself"""
         return self.txproof.tx.vin[self.i]
 
-class TxOutProof:
+class TxOutProof(proofmarshal.proof.Proof):
     """Proof that a CTxOut exists in the blockchain"""
     SERIALIZED_ATTRS = [('i', proofmarshal.serialize.UInt32),
                         ('txproof', TxProof)]
+    HASH_HMAC_KEY = bytes.fromhex('06c371531d6b9c73d6ccdb672b070ab7')
 
     def verify(self):
         assert 0 <= self.i < len(self.txproof.tx.vout)

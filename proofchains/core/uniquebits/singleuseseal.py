@@ -75,22 +75,21 @@ class BitcoinSealWitness(SingleUseSeal):
     __slots__ = ['seal','txoutproof']
 
     SERIALIZED_ATTRS = [('seal',      BitcoinSingleUseSeal),
-                        ('txin_idx',  proofmarshal.serialize.UInt32),
-                        ('txproof',   proofchains.core.bitcoin.TxProof)]
+                        ('txinproof', proofchains.core.bitcoin.TxInProof),
+                        ('txoutproof', proofchains.core.bitcoin.TxOutProof)]
 
     HASH_HMAC_KEY = bytes.fromhex('4c542f6a89da6520534e4a2095fa24fd')
 
     def verify(self):
-        assert self.seal.outpoint == self.txin_proof.outpoint
-        assert self.txin_proof.txproof == self.txout_proof.txproof
-        assert self.txout_proof.i == 0
+        assert self.seal.outpoint == self.txinproof.txin.prevout
+        assert self.txinproof.txproof == self.txoutproof.txproof
 
-    def verify_hash(self, hash):
-        assert len(hash) == 32
+    def verify_digest(self, digest):
+        assert len(digest) == 32
         # Avoid the consensus issues of parsing the scriptPubKey by generating
         # one ourselves, and then doing a byte-for-byte comparison.
         # Additionally we support P2SH and P2PKH for censorship resistance.
-        actual_scriptPubKey = self.txproof.tx.vout[0].scriptPubKey
-        assert (actual_scriptPubKey == CScript([OP_RETURN, hash]) or
-                actual_scriptPubKey == CScript([OP_HASH160, Hash160(hash), OP_EQUAL]) or
-                actual_scriptPubKey == CScript([OP_DUP, OP_HASH160, Hash160(hash), OP_EQUALVERIFY, OP_CHECKSIG]))
+        actual_scriptPubKey = self.txoutproof.txout.scriptPubKey
+        assert (actual_scriptPubKey == CScript([OP_RETURN, digest]) or
+                actual_scriptPubKey == CScript([OP_HASH160, Hash160(digest), OP_EQUAL]) or
+                actual_scriptPubKey == CScript([OP_DUP, OP_HASH160, Hash160(digest), OP_EQUALVERIFY, OP_CHECKSIG]))
