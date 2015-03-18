@@ -84,6 +84,7 @@ class BitcoinSealWitness(SingleUseSeal):
         assert self.seal.outpoint == self.txinproof.txin.prevout
         assert self.txinproof.txproof == self.txoutproof.txproof
 
+    # FIXME: verify_digest() or verify_hash()?
     def verify_digest(self, digest):
         assert len(digest) == 32
         # Avoid the consensus issues of parsing the scriptPubKey by generating
