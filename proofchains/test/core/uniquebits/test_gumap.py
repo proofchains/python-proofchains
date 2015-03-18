@@ -25,7 +25,7 @@ from proofmarshal.serialize import UInt64
 @make_GuMap_subclass
 class IntGuMap(GuMap):
     __slots__ = []
-    HASH_HMAC_KEY = b'\x00'*16
+    HASHTAG = HashTag('73777384-88f0-40cc-a836-443cc6db3589')
     KEY_SERIALIZER = UInt64
     VALUE_SERIALIZER = UInt64
 

@@ -20,6 +20,7 @@ exactly once, producing a seal witness.
 
 import proofmarshal.proof
 import proofmarshal.serialize
+from proofmarshal.serialize import HashTag
 
 import proofchains.core.bitcoin
 
@@ -44,14 +45,14 @@ class FakeSingleUseSeal(SingleUseSeal):
     __slots__ = []
     SERIALIZED_ATTRS = [('committed_hash', proofmarshal.serialize.Digest)]
 
-    HASH_HMAC_KEY = bytes.fromhex('dcd8bf2ec0640b9290e5c0874df3ce14')
+    HASHTAG = HashTag('e5690d73-16e3-4f8f-bd4f-148c32d37baf')
 
 class FakeSealWitness(SealWitness):
     """Witness to a FakeSingleUseSeal"""
     __slots__ = ['seal']
     SERIALIZED_ATTRS = [('seal', FakeSingleUseSeal)]
 
-    HASH_HMAC_KEY = bytes.fromhex('77581acb3212ad66fafc597e6154ec92')
+    HASHTAG = HashTag('a5092f56-3a31-476a-ac81-1b00211140eb')
 
     def verify_hash(self, hash):
         assert self.seal.committed_hash == hash
@@ -67,7 +68,7 @@ class BitcoinSingleUseSeal(SingleUseSeal):
     __slots__ = ['outpoint']
     SERIALIZED_ATTRS = [('outpoint', proofchains.core.bitcoin.COutPointSerializer)]
 
-    HASH_HMAC_KEY = bytes.fromhex('d2099c418f7959d7663263866540648a')
+    HASHTAG = HashTag('b59093bf-527f-4d2a-9a51-3c2e3d2f0c25')
 
 
 class BitcoinSealWitness(SingleUseSeal):
@@ -78,7 +79,7 @@ class BitcoinSealWitness(SingleUseSeal):
                         ('txinproof', proofchains.core.bitcoin.TxInProof),
                         ('txoutproof', proofchains.core.bitcoin.TxOutProof)]
 
-    HASH_HMAC_KEY = bytes.fromhex('4c542f6a89da6520534e4a2095fa24fd')
+    HASHTAG = HashTag('2ca464a0-1b8c-4aa5-8e72-5d3aaa804cbd')
 
     def verify(self):
         assert self.seal.outpoint == self.txinproof.txin.prevout

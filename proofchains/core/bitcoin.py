@@ -15,6 +15,8 @@ import proofmarshal.proof
 import proofmarshal.serialize
 import bitcoin.core
 
+from proofmarshal.serialize import HashTag
+
 class CTransactionSerializer(proofmarshal.serialize.Serializer):
     @classmethod
     def check_instance(cls, tx):
@@ -88,7 +90,7 @@ class TxProof(proofmarshal.proof.Proof):
 
 class OutPointProof(proofmarshal.proof.Proof):
     """Proof that a particular outpoint exists in the Bitcoin blockchain"""
-    HASH_HMAC_KEY = b'\xf1@\xe3\x07\xa7\xc2\xc9!%u\xfb\x1a\x8d\x8b\xb9\xe1'
+    HASHTAG = HashTag('557eb533-63be-497d-b163-7d1875de9681')
 
     __slots__ = ['txproof','n']
     SERIALIZED_ATTRS = [('txproof', TxProof),
@@ -98,7 +100,7 @@ class TxInProof(proofmarshal.proof.Proof):
     """Proof that a CTxIn exists in the blockchain"""
     SERIALIZED_ATTRS = [('i', proofmarshal.serialize.UInt32),
                         ('txproof', TxProof)]
-    HASH_HMAC_KEY = bytes.fromhex('3fb898ec2c452d2c1e13654e43f624e3')
+    HASHTAG = HashTag('65d34d83-3291-4813-9119-bd7e29b9dea3')
 
     def verify(self):
         assert 0 <= self.i < len(self.txproof.tx.vin)
@@ -112,7 +114,7 @@ class TxOutProof(proofmarshal.proof.Proof):
     """Proof that a CTxOut exists in the blockchain"""
     SERIALIZED_ATTRS = [('i', proofmarshal.serialize.UInt32),
                         ('txproof', TxProof)]
-    HASH_HMAC_KEY = bytes.fromhex('06c371531d6b9c73d6ccdb672b070ab7')
+    HASHTAG = HashTag('ed624663-7a20-4dd6-8980-9870003dfbe7')
 
     def verify(self):
         assert 0 <= self.i < len(self.txproof.tx.vout)

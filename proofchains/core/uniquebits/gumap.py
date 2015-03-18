@@ -9,18 +9,17 @@
 # propagated, or distributed except according to the terms contained in the
 # LICENSE file.
 
-import hashlib
-import hmac
-
 import proofmarshal.proof
 import proofchains.core.uniquebits.singleuseseal
 import proofmarshal.bits
+
+from proofmarshal.serialize import HashTag
 
 class GuMap(proofmarshal.proof.ProofUnion):
     """Globally Unique Map"""
     __slots__ = []
 
-    HASH_HMAC_KEY = None
+    HASHTAG = None
 
     KEY_SERIALIZER = None
     VALUE_SERIALIZER = None
@@ -43,6 +42,8 @@ def make_GuMap_subclass(subclass):
         SERIALIZED_ATTRS = [('prefix', proofmarshal.bits.BitsSerializer),
                             ('seal', subclass.SEAL_CLASS)]
 
+        SUB_HASHTAG = HashTag('dae47bef-d9a3-4971-a6a4-1c67c5f02c11')
+
         def verify(self):
             pass
 
@@ -57,6 +58,8 @@ def make_GuMap_subclass(subclass):
         SERIALIZED_ATTRS = [('witness', subclass.WITNESS_CLASS),
                             ('key', subclass.KEY_SERIALIZER),
                             ('value', subclass.VALUE_SERIALIZER)]
+
+        SUB_HASHTAG = HashTag('0c60f344-9109-4930-aec1-432c5750fcba')
 
         used = False
         dirty = False
@@ -88,9 +91,15 @@ def make_GuMap_subclass(subclass):
             except AttributeError:
                 value_hash = cls.VALUE_SERIALIZER.serialize(value)
 
-            # FIXME: we need a thought-out standard for how to do HMAC derivation for things like this
+            try:
+                cls.CONTENTS_HASHTAG
+            except AttributeError:
+                cls.CONTENTS_HASHTAG = HashTag('59c17f37-7e26-4aea-8a5b-7c0db66af35b').derive(cls.HASHTAG)
+
+            msg = left.seal.hash + right.seal.hash
+
             msg = key_hash + value_hash
-            return hmac.HMAC(cls.HASH_HMAC_KEY + b'leaf contents', msg, hashlib.sha256).digest()
+            return cls.CONTENTS_HASHTAG(msg).digest()
 
         def verify(self):
             self.witness.verify_digest(self.__calc_sealed_hash(self.key, self.value))
@@ -108,6 +117,8 @@ def make_GuMap_subclass(subclass):
                             ('left',    subclass),
                             ('right',   subclass)]
 
+        SUB_HASHTAG = HashTag('6893cac7-e834-49cd-8e95-77707b0499b5')
+
         @classmethod
         def from_unused_prefix(cls, unused_prefix, left, right, make_witness):
             # FIXME: check prefixes of left and right
@@ -119,9 +130,13 @@ def make_GuMap_subclass(subclass):
 
         @classmethod
         def __calc_sealed_hash(cls, left, right):
-            # FIXME: we need a thought-out standard for how to do HMAC derivation for things like this
+            try:
+                cls.CONTENTS_HASHTAG
+            except AttributeError:
+                cls.CONTENTS_HASHTAG = HashTag('b925044d-320e-4c1f-9ef8-20614d260676').derive(cls.HASHTAG)
+
             msg = left.seal.hash + right.seal.hash
-            return hmac.HMAC(cls.HASH_HMAC_KEY + b'inner contents', msg, hashlib.sha256).digest()
+            return cls.CONTENTS_HASHTAG(msg).digest()
 
         def verify(self):
             self.witness.verify_digest(self.__calc_sealed_hash(self.left, self.right))
