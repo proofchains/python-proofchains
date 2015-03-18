@@ -169,7 +169,7 @@ def cmd_mkwitness(args):
         for i, txin in enumerate(txproof.tx.vin):
             if txin.prevout == seal.outpoint:
                 txinproof = TxInProof(i=i, txproof=txproof)
-                txoutproof = TxInProof(i=0, txproof=txproof)
+                txoutproof = TxOutProof(i=0, txproof=txproof)
                 break
 
         else:
