@@ -36,8 +36,6 @@ def make_GuMap_subclass(subclass):
     @subclass.declare_union_subclass
     class UnusedPrefix(subclass):
         """A prefix whose seal hasn't been used yet"""
-        used = False
-
         __slots__ = ('prefix', 'seal')
         SERIALIZED_ATTRS = [('prefix', proofmarshal.bits.BitsSerializer),
                             ('seal', subclass.SEAL_CLASS)]
@@ -60,9 +58,6 @@ def make_GuMap_subclass(subclass):
                             ('value', subclass.VALUE_SERIALIZER)]
 
         SUB_HASHTAG = HashTag('0c60f344-9109-4930-aec1-432c5750fcba')
-
-        used = False
-        dirty = False
 
         @classmethod
         def from_unused_prefix(cls, unused_prefix, key, value, make_witness):
