@@ -9,13 +9,13 @@
 # propagated, or distributed except according to the terms contained in the
 # LICENSE file.
 
-import proofmarshal.proof
-import proofchains.core.uniquebits.singleuseseal
 import proofmarshal.bits
 
+from proofchains.core.uniquebits.singleuseseal import FakeSingleUseSeal, FakeSealWitness
+from proofmarshal.proof import VarProof, ProofUnion
 from proofmarshal.serialize import HashTag
 
-class GuMap(proofmarshal.proof.VarProof):
+class GuMap(VarProof):
     """Globally Unique Map"""
     __slots__ = []
 
@@ -38,7 +38,7 @@ def make_GuMap_subclass(subclass):
         """A prefix whose seal hasn't been used yet"""
         __slots__ = ('prefix', 'seal')
         SERIALIZED_ATTRS = [('prefix', proofmarshal.bits.BitsSerializer),
-                            ('seal', subclass.SEAL_CLASS)]
+                            ('seal', ProofUnion(FakeSingleUseSeal, subclass.SEAL_CLASS))]
 
         SUB_HASHTAG = HashTag('dae47bef-d9a3-4971-a6a4-1c67c5f02c11')
 
@@ -53,7 +53,7 @@ def make_GuMap_subclass(subclass):
         """A prefix whose seal has been closed over a key:value pair"""
 
         __slots__ = ('key','value')
-        SERIALIZED_ATTRS = [('witness', subclass.WITNESS_CLASS),
+        SERIALIZED_ATTRS = [('witness', ProofUnion(FakeSealWitness, subclass.WITNESS_CLASS)),
                             ('key', subclass.KEY_SERIALIZER),
                             ('value', subclass.VALUE_SERIALIZER)]
 
@@ -70,6 +70,10 @@ def make_GuMap_subclass(subclass):
         @property
         def prefix(self):
             return self.key2prefix(self.key)
+
+        @property
+        def seal(self):
+            return self.witness.seal
 
         @classmethod
         def __calc_sealed_hash(cls, key, value):
@@ -91,8 +95,6 @@ def make_GuMap_subclass(subclass):
             except AttributeError:
                 cls.CONTENTS_HASHTAG = HashTag('59c17f37-7e26-4aea-8a5b-7c0db66af35b').derive(cls.HASHTAG)
 
-            msg = left.seal.hash + right.seal.hash
-
             msg = key_hash + value_hash
             return cls.CONTENTS_HASHTAG(msg).digest()
 
@@ -108,7 +110,7 @@ def make_GuMap_subclass(subclass):
 
         __slots__ = ('prefix','left', 'right')
         SERIALIZED_ATTRS = [('prefix',  proofmarshal.bits.BitsSerializer),
-                            ('witness', subclass.WITNESS_CLASS),
+                            ('witness', ProofUnion(FakeSealWitness, subclass.WITNESS_CLASS)),
                             ('left',    subclass),
                             ('right',   subclass)]
 
@@ -122,6 +124,21 @@ def make_GuMap_subclass(subclass):
             return proofmarshal.proof.VarProof.__new__(cls, prefix=unused_prefix.prefix,
                                                               witness=witness,
                                                               left=left, right=right)
+        @classmethod
+        def from_children(cls, left, right):
+            """Make an InnerPrefix from left and right children
+
+            The seal and witness are faked.
+            """
+            prefix = left.prefix.common_prefix(right.prefix)
+            fake_witness = FakeSealWitness.from_hash(cls.__calc_sealed_hash(left, right))
+            return proofmarshal.proof.VarProof.__new__(cls, prefix=prefix,
+                                                              witness=fake_witness,
+                                                              left=left, right=right)
+
+        @property
+        def seal(self):
+            return self.witness.seal
 
         @classmethod
         def __calc_sealed_hash(cls, left, right):

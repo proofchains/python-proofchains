@@ -54,6 +54,10 @@ class FakeSealWitness(SealWitness):
 
     HASHTAG = HashTag('a5092f56-3a31-476a-ac81-1b00211140eb')
 
+    @classmethod
+    def from_hash(cls, hash):
+        return cls(seal=FakeSingleUseSeal(committed_hash=hash))
+
     def verify_hash(self, hash):
         assert self.seal.committed_hash == hash
 
