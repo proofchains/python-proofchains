@@ -97,7 +97,7 @@ class Test_Proof(unittest.TestCase):
         f_pruned = f.prune()
 
         self.assertEqual(f_pruned.serialize(),
-                         b'\xff' + f_pruned.hash)
+                         b'\xff' + f_pruned.data_hash)
 
     def test_fully_pruned_deserialization(self):
         """Serialization of fully pruned proofs"""
@@ -105,7 +105,7 @@ class Test_Proof(unittest.TestCase):
 
         self.assertTrue(f.is_pruned)
         self.assertTrue(f.is_fully_pruned)
-        self.assertEqual(f.hash, b'\x00'*32)
+        self.assertEqual(f.data_hash, b'\x00'*32)
 
     def test_pruned_serialization(self):
         """Serialization of pruned proofs"""
@@ -124,16 +124,16 @@ class Test_Proof(unittest.TestCase):
 
         self.assertEqual(b.serialize(),
                          (b'\x00' + # not pruned
-                          b'\xff' + f1.hash + # left fully pruned
-                          b'\xff' + f2.hash + # right fully pruned
+                          b'\xff' + f1.data_hash + # left fully pruned
+                          b'\xff' + f2.data_hash + # right fully pruned
                           b'\x03')) # non-proof attribute
 
         # Depend on b.left.hash, which does *not* change the serialization
         self.assertEqual(b.left.hash, f1.hash)
         self.assertEqual(b.serialize(),
                          (b'\x00' + # not pruned
-                          b'\xff' + f1.hash + # left fully pruned
-                          b'\xff' + f2.hash + # right fully pruned
+                          b'\xff' + f1.data_hash + # left fully pruned
+                          b'\xff' + f2.data_hash + # right fully pruned
                           b'\x03')) # non-proof attribute
 
         # Using b.left.n however does unprune b.left, changing the serialization
@@ -141,7 +141,7 @@ class Test_Proof(unittest.TestCase):
         self.assertEqual(b.serialize(),
                          (b'\x00' + # not pruned
                           b'\x00' + b'\x01' + # left not pruned
-                          b'\xff' + f2.hash + # right fully pruned
+                          b'\xff' + f2.data_hash + # right fully pruned
                           b'\x03')) # non-proof attribute
 
     def test_pruned_deserialization(self):
@@ -188,78 +188,79 @@ class Test_Proof(unittest.TestCase):
             self.assertIs(exp.instance, pruned)
 
 
-class FooUnion(ProofUnion):
+class FooVarProof(VarProof):
     HASHTAG = HashTag('0790a99e-0a12-4677-b4c6-57054039b9cf')
 
-@FooUnion.declare_union_subclass
-class EmptyFooUnion(FooUnion):
+@FooVarProof.declare_variant
+class EmptyFooVarProof(FooVarProof):
     SUB_HASHTAG = HashTag('a5516ff0-99a7-4a00-b918-8d30ea6f25b1')
     SERIALIZED_ATTRS = []
 
-@FooUnion.declare_union_subclass
-class LeafFooUnion(FooUnion):
+@FooVarProof.declare_variant
+class LeafFooVarProof(FooVarProof):
     SUB_HASHTAG = HashTag('69cd3faa-b1e7-48e4-be6e-d73f6644829b')
     SERIALIZED_ATTRS = [('value', UInt8)]
 
-@FooUnion.declare_union_subclass
-class InnerFooUnion(FooUnion):
+@FooVarProof.declare_variant
+class InnerFooVarProof(FooVarProof):
     SUB_HASHTAG = HashTag('e540376a-b7b4-4b06-8d25-b7b00cf7e081')
-    SERIALIZED_ATTRS = [('left', FooUnion),
-                        ('right', FooUnion)]
+    SERIALIZED_ATTRS = [('left', FooVarProof),
+                        ('right', FooVarProof)]
 
-@FooUnion.declare_union_subclass
-class DerivedHmacFooUnion(FooUnion):
+@FooVarProof.declare_variant
+class DerivedHmacFooVarProof(FooVarProof):
     SUB_HASHTAG = HashTag('6d0ef952-6621-4a85-8f4c-23ae0427c937')
     SERIALIZED_ATTRS = []
 
-class Test_ProofUnion(unittest.TestCase):
+class Test_VarProof(unittest.TestCase):
     def test_checkinstance(self):
-        FooUnion.check_instance(EmptyFooUnion())
-        FooUnion.check_instance(LeafFooUnion(value=0))
-        FooUnion.check_instance(InnerFooUnion(left=EmptyFooUnion(), right=EmptyFooUnion()))
+        FooVarProof.check_instance(EmptyFooVarProof())
+        FooVarProof.check_instance(LeafFooVarProof(value=0))
+        FooVarProof.check_instance(InnerFooVarProof(left=EmptyFooVarProof(), right=EmptyFooVarProof()))
 
         with self.assertRaises(SerializerTypeError):
-            FooUnion.check_instance(None)
+            FooVarProof.check_instance(None)
 
-        # The FooUnion class is *not* part of the union, it's just the
+        # The FooVarProof class is *not* part of the union, it's just the
         # serializer for classes in it
         with self.assertRaises(SerializerTypeError):
-            FooUnion.check_instance(FooUnion)
+            FooVarProof.check_instance(FooVarProof)
 
     def test_serialization(self):
-        self.assertEqual(EmptyFooUnion().serialize(), b'\x00\x00')
-        self.assertEqual(LeafFooUnion(value=0xf).serialize(), b'\x00\x01\x0f')
-        self.assertEqual(InnerFooUnion(left=EmptyFooUnion(),
-                                       right=LeafFooUnion(value=0xf)).serialize(),
+        self.assertEqual(EmptyFooVarProof().serialize(), b'\x00\x00')
+        self.assertEqual(LeafFooVarProof(value=0xf).serialize(), b'\x00\x01\x0f')
+        self.assertEqual(InnerFooVarProof(left=EmptyFooVarProof(),
+                                       right=LeafFooVarProof(value=0xf)).serialize(),
                          b'\x00\x02\x00\x00\x00\x01\x0f')
 
     def test_deserialization(self):
-        x = EmptyFooUnion()
-        self.assertEqual(EmptyFooUnion.deserialize(x.serialize()), x)
+        x = EmptyFooVarProof()
+        self.assertEqual(EmptyFooVarProof.deserialize(x.serialize()), x)
 
-        x = LeafFooUnion(value=0xf)
-        self.assertEqual(LeafFooUnion.deserialize(x.serialize()), x)
+        x = LeafFooVarProof(value=0xf)
+        self.assertEqual(LeafFooVarProof.deserialize(x.serialize()), x)
 
-        x = InnerFooUnion(left=EmptyFooUnion(), right=LeafFooUnion(value=0xf))
-        self.assertEqual(InnerFooUnion.deserialize(x.serialize()), x)
+        x = InnerFooVarProof(left=EmptyFooVarProof(), right=LeafFooVarProof(value=0xf))
+        self.assertEqual(InnerFooVarProof.deserialize(x.serialize()), x)
 
     def test_hashing(self):
         def H(cls, msg):
-            return hashlib.sha256(cls.HASHTAG + msg).digest()
+            data_hash = hashlib.sha256(msg).digest()
+            return hashlib.sha256(cls.HASHTAG + data_hash).digest()
 
-        empty = EmptyFooUnion()
-        expected_empty_hash = H(EmptyFooUnion, b'')
+        empty = EmptyFooVarProof()
+        expected_empty_hash = H(EmptyFooVarProof, b'')
         self.assertEqual(empty.hash, expected_empty_hash)
 
-        leaf = LeafFooUnion(value=0x0f)
-        expected_leaf_hash = H(LeafFooUnion, b'\x0f')
+        leaf = LeafFooVarProof(value=0x0f)
+        expected_leaf_hash = H(LeafFooVarProof, b'\x0f')
         self.assertEqual(leaf.hash, expected_leaf_hash)
 
-        inner = InnerFooUnion(left=empty, right=leaf)
-        expected_inner_hash = H(InnerFooUnion, expected_empty_hash + expected_leaf_hash)
+        inner = InnerFooVarProof(left=empty, right=leaf)
+        expected_inner_hash = H(InnerFooVarProof, expected_empty_hash + expected_leaf_hash)
         self.assertEqual(inner.hash, expected_inner_hash)
 
     def test_hmac_derivation(self):
-        self.assertNotEqual(FooUnion.HASHTAG, DerivedHmacFooUnion.HASHTAG)
-        self.assertEqual(DerivedHmacFooUnion.HASHTAG,
+        self.assertNotEqual(FooVarProof.HASHTAG, DerivedHmacFooVarProof.HASHTAG)
+        self.assertEqual(DerivedHmacFooVarProof.HASHTAG,
                          HashTag('498430c5-4ed1-8dd5-3f09-97e0725c3407'))
