@@ -15,7 +15,7 @@ import proofmarshal.bits
 
 from proofmarshal.serialize import HashTag
 
-class GuMap(proofmarshal.proof.ProofUnion):
+class GuMap(proofmarshal.proof.VarProof):
     """Globally Unique Map"""
     __slots__ = []
 
@@ -33,7 +33,7 @@ class GuMap(proofmarshal.proof.ProofUnion):
 
 
 def make_GuMap_subclass(subclass):
-    @subclass.declare_union_subclass
+    @subclass.declare_variant
     class UnusedPrefix(subclass):
         """A prefix whose seal hasn't been used yet"""
         __slots__ = ('prefix', 'seal')
@@ -48,7 +48,7 @@ def make_GuMap_subclass(subclass):
     subclass.UnusedPrefix = UnusedPrefix
 
 
-    @subclass.declare_union_subclass
+    @subclass.declare_variant
     class LeafPrefix(subclass):
         """A prefix whose seal has been closed over a key:value pair"""
 
@@ -64,7 +64,7 @@ def make_GuMap_subclass(subclass):
             # FIXME: check key is right prefix
 
             witness = make_witness(unused_prefix.seal, cls.__calc_sealed_hash(key, value))
-            return proofmarshal.proof.ProofUnion.__new__(cls, witness=witness, key=key, value=value)
+            return proofmarshal.proof.VarProof.__new__(cls, witness=witness, key=key, value=value)
 
 
         @property
@@ -102,7 +102,7 @@ def make_GuMap_subclass(subclass):
     subclass.LeafPrefix = LeafPrefix
 
 
-    @subclass.declare_union_subclass
+    @subclass.declare_variant
     class InnerPrefix(subclass):
         """A prefix closed over left and right children"""
 
@@ -119,7 +119,7 @@ def make_GuMap_subclass(subclass):
             # FIXME: check prefixes of left and right
 
             witness = make_witness(unused_prefix.seal, cls.__calc_sealed_hash(left, right))
-            return proofmarshal.proof.ProofUnion.__new__(cls, prefix=unused_prefix.prefix,
+            return proofmarshal.proof.VarProof.__new__(cls, prefix=unused_prefix.prefix,
                                                               witness=witness,
                                                               left=left, right=right)
 
