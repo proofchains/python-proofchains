@@ -211,7 +211,7 @@ def cmd_verifywitness(args):
     witness.verify()
 
     if args.digest is not None:
-        witness.verify_digest(args.digest)
+        witness.verify_hash(args.digest)
 
     # FIXME: seal and seal hash
 

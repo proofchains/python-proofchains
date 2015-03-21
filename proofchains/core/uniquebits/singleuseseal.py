@@ -85,13 +85,12 @@ class BitcoinSealWitness(SingleUseSeal):
         assert self.seal.outpoint == self.txinproof.txin.prevout
         assert self.txinproof.txproof == self.txoutproof.txproof
 
-    # FIXME: verify_digest() or verify_hash()?
-    def verify_digest(self, digest):
-        assert len(digest) == 32
+    def verify_hash(self, hash):
+        assert len(hash) == 32
         # Avoid the consensus issues of parsing the scriptPubKey by generating
         # one ourselves, and then doing a byte-for-byte comparison.
         # Additionally we support P2SH and P2PKH for censorship resistance.
         actual_scriptPubKey = self.txoutproof.txout.scriptPubKey
-        assert (actual_scriptPubKey == CScript([OP_RETURN, digest]) or
-                actual_scriptPubKey == CScript([OP_HASH160, Hash160(digest), OP_EQUAL]) or
-                actual_scriptPubKey == CScript([OP_DUP, OP_HASH160, Hash160(digest), OP_EQUALVERIFY, OP_CHECKSIG]))
+        assert (actual_scriptPubKey == CScript([OP_RETURN, hash]) or
+                actual_scriptPubKey == CScript([OP_HASH160, Hash160(hash), OP_EQUAL]) or
+                actual_scriptPubKey == CScript([OP_DUP, OP_HASH160, Hash160(hash), OP_EQUALVERIFY, OP_CHECKSIG]))

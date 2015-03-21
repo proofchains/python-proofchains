@@ -97,7 +97,7 @@ def make_GuMap_subclass(subclass):
             return cls.CONTENTS_HASHTAG(msg).digest()
 
         def verify(self):
-            self.witness.verify_digest(self.__calc_sealed_hash(self.key, self.value))
+            self.witness.verify_hash(self.__calc_sealed_hash(self.key, self.value))
 
     subclass.LeafPrefix = LeafPrefix
 
@@ -134,7 +134,7 @@ def make_GuMap_subclass(subclass):
             return cls.CONTENTS_HASHTAG(msg).digest()
 
         def verify(self):
-            self.witness.verify_digest(self.__calc_sealed_hash(self.left, self.right))
+            self.witness.verify_hash(self.__calc_sealed_hash(self.left, self.right))
     subclass.InnerPrefix = InnerPrefix
 
     return subclass

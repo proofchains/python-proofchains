@@ -50,6 +50,6 @@ class Test_SingleUseSeal(unittest.TestCase):
 
         btc_sus_witness = BitcoinSealWitness(seal=btc_sus, txinproof=txinproof, txoutproof=txoutproof)
 
-        btc_sus_witness.verify_digest(b'\x00'*32)
+        btc_sus_witness.verify_hash(b'\x00'*32)
 
     # FIXME: need tests for invalid witnesses
