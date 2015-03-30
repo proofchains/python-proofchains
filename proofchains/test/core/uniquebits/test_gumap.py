@@ -36,10 +36,10 @@ class IntGuMap(GuMap):
     def key2prefix(key):
         return Bits.from_bytes(key.to_bytes(4, 'big'))
 
-def make_btc_seal(outpoint_hash=None):
+def make_btc_seal(outpoint_hash=None, nonce=b''):
     if outpoint_hash is None:
         outpoint_hash = os.urandom(32)
-    return BitcoinSingleUseSeal(outpoint=COutPoint(outpoint_hash,0))
+    return BitcoinSingleUseSeal(outpoint=COutPoint(outpoint_hash,0), nonce=nonce)
 
 def make_btc_witness(seal, hash):
     tx = CTransaction([CTxIn(seal.outpoint)], [CTxOut(0, CScript([OP_RETURN, hash]))])

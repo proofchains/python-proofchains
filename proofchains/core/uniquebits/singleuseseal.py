@@ -69,8 +69,9 @@ class BitcoinSingleUseSeal(SingleUseSeal):
     Simply an outpoint in the Bitcoin blockchain that is later spent in a
     specific way.
     """
-    __slots__ = ['outpoint']
-    SERIALIZED_ATTRS = [('outpoint', proofchains.core.bitcoin.COutPointSerializer)]
+    __slots__ = ['outpoint', 'nonce']
+    SERIALIZED_ATTRS = [('outpoint', proofchains.core.bitcoin.COutPointSerializer),
+                        ('nonce', proofmarshal.serialize.VarBytes(0,16))]
 
     HASHTAG = HashTag('b59093bf-527f-4d2a-9a51-3c2e3d2f0c25')
 

@@ -40,7 +40,7 @@ class Test_FakeSingleUseSeal(unittest.TestCase):
 class Test_SingleUseSeal(unittest.TestCase):
     def test_valid_witness(self):
         seal_outpoint = COutPoint(lx('14180092832c9e49f36e37c2cfa6695a6670cc66dcba42266245e11c8f9de4cf'), 0)
-        btc_sus = BitcoinSingleUseSeal(outpoint=seal_outpoint)
+        btc_sus = BitcoinSingleUseSeal(outpoint=seal_outpoint,nonce=b'')
 
         witness_tx = CTransaction([CTxIn(seal_outpoint)], [CTxOut(0, CScript([OP_RETURN, b'\x00'*32]))])
 
