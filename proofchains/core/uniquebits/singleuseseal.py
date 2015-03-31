@@ -67,11 +67,13 @@ class BitcoinSingleUseSeal(SingleUseSeal):
     """Single Use Seal implemented via Bitcoin
 
     Simply an outpoint in the Bitcoin blockchain that is later spent in a
-    specific way.
+    specific way. Additionally a 128bit blinding nonce is contained to ensure
+    that the specific outpoint committed to by the seal can't be brute forced
+    from the UTXO set and the hash of the seal; prevents miner censorship.
     """
     __slots__ = ['outpoint', 'nonce']
     SERIALIZED_ATTRS = [('outpoint', proofchains.core.bitcoin.COutPointSerializer),
-                        ('nonce', proofmarshal.serialize.VarBytes(0,16))]
+                        ('nonce', proofmarshal.serialize.FixedBytes(16))]
 
     HASHTAG = HashTag('b59093bf-527f-4d2a-9a51-3c2e3d2f0c25')
 

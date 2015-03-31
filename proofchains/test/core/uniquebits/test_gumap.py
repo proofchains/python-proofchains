@@ -36,7 +36,7 @@ class IntGuMap(GuMap):
     def key2prefix(key):
         return Bits.from_bytes(key.to_bytes(4, 'big'))
 
-def make_btc_seal(outpoint_hash=None, nonce=b''):
+def make_btc_seal(outpoint_hash=None, nonce=b'\x00'*16):
     if outpoint_hash is None:
         outpoint_hash = os.urandom(32)
     return BitcoinSingleUseSeal(outpoint=COutPoint(outpoint_hash,0), nonce=nonce)
